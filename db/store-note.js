@@ -27,7 +27,7 @@ class Store {
     if (!title || !text) {
       throw new Error(`Make sure you've added a title and text to your note.`);
     }
-    const newNote = { title, text, idNumber };
+    const newNote = { title, text, id: idNumber() };
     return this.getNote()
       .then((notes) => [...notes, newNote])
       .then((updatedNote) => this.write(updatedNote))
@@ -35,7 +35,7 @@ class Store {
   }
   deleteNote(id) {
     return this.getNote()
-      .then((note) => note.filter((note) => note.idNumber !== id))
+      .then((notes) => notes.filter((note) => note.id !== id))
       .then((filteredNotes) => this.write(filteredNotes));
   }
 }
