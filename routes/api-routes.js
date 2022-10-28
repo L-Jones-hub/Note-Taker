@@ -1,58 +1,37 @@
 const path = require(`path`);
-const express = require(`express`);
+
 const db = require(`../db/db.json`);
 const idNumber = require(`../helpers/uuid`);
+const storeNote = require(`../db/store-note`);
 const fs = require(`fs`);
-const app = express();
 
-app.get(`/notes`, (req, res) => {
-  res.sendFile(path.join(__dirname, `../public/notes.html`));
+const router = require(`express`).Router();
+
+router.get(`/notes`, (req, res) => {
+  storeNote
+    .getNote()
+    .then((notes) => {
+      return res.json(notes);
+    })
+    .catch((err) => res.status(500).json(err));
 });
 
-app.get("/api/notes", (req, res) => {
-  res.json(db);
+router.post("/notes", (req, res) => {
+  storeNote
+    .addNote(req.body)
+    .then((note) => res.json(note))
+    .catch((err) => res.status(500).json(err));
 });
 
-app.post("/api/notes", (req, res) => {
-  const { title, text } = req.body;
-  if (title && text) {
-    const newNote = {
-      title,
-      text,
-      id: idNumber(),
-    };
-
-    console.log(newNote);
-
-    db.push(newNote);
-    fs.writeFile("./db/db.json", JSON.stringify(db), (err) => {
-      err ? console.log(err) : console.log("success");
-    });
-
-    res.status(201).json(newNote);
-  } else {
-    res.status(500).json("Error in saving your note");
-  }
+router.delete("/notes/:id", (req, res) => {
+  storeNote
+    .deleteNote(req.params.id)
+    .then(() => res.json({ ok: true }))
+    .catch((err) => res.status(500).json(err));
 });
 
-app.delete("/api/notes/:id", (req, res) => {
-  console.log(req.params);
-  const { id } = req.params;
-  for (i = 0; i < db.length; i++) {
-    if (id === db[i].id) {
-      db.splice(i, 1);
-      fs.writeFile("./db/db.json", JSON.stringify(db), (err) => {
-        err ? console.log(err) : console.log("Note deleted");
-      });
-      res.status(201).json(db);
-      return;
-    }
-  }
-  res.status(500).json("Error in deleting your note");
-});
-
-app.get(`*`, (req, res) => {
+router.get(`*`, (req, res) => {
   res.sendFile(path.join(__dirname, `../public/index.html`));
 });
 
-module.exports = app;
+module.exports = router;
